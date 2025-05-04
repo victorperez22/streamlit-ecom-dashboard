@@ -104,29 +104,86 @@ kpicol1, kpicol2, kpicol3 = st.columns(3)
 total_net_sales = df_filtered['NetSalesAmount'].sum(); total_orders = df_filtered['OrderID'].nunique(); total_returned_orders = df_filtered[df_filtered['Returned']]['OrderID'].nunique(); return_rate = (total_returned_orders / total_orders) * 100 if total_orders > 0 else 0
 prev_total_net_sales = df_previous['NetSalesAmount'].sum() if not df_previous.empty else 0; prev_total_orders = df_previous['OrderID'].nunique() if not df_previous.empty else 0; prev_total_returned_orders = df_previous[df_previous['Returned']]['OrderID'].nunique() if not df_previous.empty else 0; prev_return_rate = (prev_total_returned_orders / prev_total_orders) * 100 if prev_total_orders > 0 else 0
 
-# KPI Delta Calculation Logic (v3.2)
-delta_sales_val = "N/A Prev."; delta_sales_color = "off"; prev_sales_help = "N/A"; can_compare_sales = not df_previous.empty or prev_total_net_sales > 0
+# KPI Delta Calculation Logic
+delta_sales = 0  # Initialize delta value
+delta_sales_val = "N/A Prev."
+delta_sales_color = "off"
+prev_sales_help = "N/A"
+can_compare_sales = not df_previous.empty or prev_total_net_sales > 0
 if can_compare_sales:
     prev_sales_help = f"€{prev_total_net_sales:,.2f}"
-    if prev_total_net_sales > 0: delta_sales = ((total_net_sales - prev_total_net_sales) / prev_total_net_sales) * 100; delta_sales_val = f"{delta_sales:.1f}%"; delta_sales_color = "normal" if delta_sales >= 0 else "inverse"
-    elif total_net_sales > 0: delta_sales_val = "∞%"; delta_sales_color = "normal"
-elif total_net_sales > 0: delta_sales_val = "(New Period)"; delta_sales_color = "off"
-delta_orders_val = "N/A Prev."; delta_orders_color = "off"; prev_orders_help = "N/A"; can_compare_orders = not df_previous.empty or prev_total_orders > 0
+    if prev_total_net_sales > 0:
+        delta_sales = ((total_net_sales - prev_total_net_sales) / prev_total_net_sales) * 100  # Calculate delta
+        delta_sales_val = f"{delta_sales:.1f}%"
+        delta_sales_color = "normal"  # Always "normal"
+    elif total_net_sales > 0:
+        delta_sales = float('inf')  # Represent infinite increase numerically
+        delta_sales_val = "∞%"
+        delta_sales_color = "normal"  # Treat increase from zero as positive
+elif total_net_sales > 0:
+    # If no previous data but current data exists
+    delta_sales = float('nan')  # Represent change is not applicable
+    delta_sales_val = "(New Period)"
+    delta_sales_color = "off"
+else:
+    # If no current data
+    delta_sales = float('nan')
+
+delta_orders = 0  # Initialize delta value
+delta_orders_val = "N/A Prev."
+delta_orders_color = "off"
+prev_orders_help = "N/A"
+can_compare_orders = not df_previous.empty or prev_total_orders > 0
 if can_compare_orders:
     prev_orders_help = f"{prev_total_orders:,}"
-    if prev_total_orders > 0: delta_orders = ((total_orders - prev_total_orders) / prev_total_orders) * 100; delta_orders_val = f"{delta_orders:.1f}%"; delta_orders_color = "normal" if delta_orders >= 0 else "inverse"
-    elif total_orders > 0: delta_orders_val = "∞%"; delta_orders_color = "normal"
-elif total_orders > 0: delta_orders_val = "(New Period)"; delta_orders_color = "off"
-delta_return_rate_val = "N/A"; delta_return_rate_color = "off"; prev_rate_help = "N/A"; current_rate_str = f"{return_rate:.1f}%" if total_orders > 0 else "N/A"; can_calculate_prev_rate = prev_total_orders > 0
-if total_orders > 0 :
-    if can_calculate_prev_rate: prev_rate_help = f"{prev_return_rate:.1f}%"; delta_return_rate = return_rate - prev_return_rate; delta_return_rate_val = f"{delta_return_rate:+.1f} pts"; delta_return_rate_color = "inverse" if delta_return_rate >= 0 else "normal"
-    else: delta_return_rate_val = "(vs N/A)"; delta_return_rate_color = "off"
-elif can_calculate_prev_rate: prev_rate_help = f"{prev_return_rate:.1f}%"; delta_return_rate_val = "(Current N/A)"; delta_return_rate_color = "off"
+    if prev_total_orders > 0:
+        delta_orders = ((total_orders - prev_total_orders) / prev_total_orders) * 100  # Calculate delta
+        delta_orders_val = f"{delta_orders:.1f}%"
+        delta_orders_color = "normal"  # Always "normal"
+    elif total_orders > 0:
+        delta_orders = float('inf')
+        delta_orders_val = "∞%"
+        delta_orders_color = "normal"  # Treat increase from zero as positive
+elif total_orders > 0:
+    delta_orders = float('nan')
+    delta_orders_val = "(New Period)"
+    delta_orders_color = "off"
+else:
+    delta_orders = float('nan')
+
+delta_return_rate = 0  # Initialize delta value
+delta_return_rate_val = "N/A"
+delta_return_rate_color = "off"
+prev_rate_help = "N/A"
+current_rate_str = f"{return_rate:.1f}%" if total_orders > 0 else "N/A"
+can_calculate_prev_rate = prev_total_orders > 0
+if total_orders > 0:
+    if can_calculate_prev_rate:
+        prev_rate_help = f"{prev_return_rate:.1f}%"
+        delta_return_rate = return_rate - prev_return_rate  # Calculate delta
+        delta_return_rate_val = f"{delta_return_rate:+.1f} pts"
+        delta_return_rate_color = "normal"  # Always "normal"
+    else:
+        # Current data exists, previous doesn't
+        delta_return_rate = float('nan')
+        delta_return_rate_val = "(vs N/A)"
+        delta_return_rate_color = "off"
+elif can_calculate_prev_rate:
+    # Previous data exists, current doesn't
+    prev_rate_help = f"{prev_return_rate:.1f}%"
+    delta_return_rate = float('nan')
+    delta_return_rate_val = "(Current N/A)"
+    delta_return_rate_color = "off"
+else:
+    # Neither exists
+    delta_return_rate = float('nan')
+
 # Display KPIs
-kpicol1.metric("Total Net Sales", f"€{total_net_sales:,.2f}", delta=delta_sales_val if delta_sales_val not in ["N/A Prev.", "(New Period)"] else None, delta_color=delta_sales_color, help=f"vs Previous Period ({prev_sales_help})")
-kpicol2.metric("Total Orders", f"{total_orders:,}", delta=delta_orders_val if delta_orders_val not in ["N/A Prev.", "(New Period)"] else None, delta_color=delta_orders_color, help=f"vs Previous Period ({prev_orders_help})")
-kpicol3.metric("Return Rate", current_rate_str, delta=delta_return_rate_val if delta_return_rate_val not in ["N/A", "(vs N/A)", "(Current N/A)"] else None, delta_color=delta_return_rate_color, help=f"{delta_return_rate_val if delta_return_rate_val in ['(vs N/A)', '(Current N/A)'] else ''} vs Previous Period ({prev_rate_help})")
-with st.expander("ⓘ KPI Design Justifications"): st.caption(""" *   **Visual Hierarchy & Chunking:** KPIs prominent, grouped. *   **Comparative Analysis / Contextual Reference Points:** Change vs previous period shown with robust color logic. *   **Anchoring Bias Mitigation:** Comparison reduces reliance on current numbers. *   **Confirmation Bias / Survivorship Bias Mitigation:** Explicit *Return Rate* shown. *   **Cognitive Offloading:** Changes calculated, handling edge cases. """)
+kpicol1.metric("Total Net Sales", f"€{total_net_sales:,.2f}", delta=delta_sales_val if delta_sales_color != "off" else None, delta_color=delta_sales_color, help=f"vs Previous Period ({prev_sales_help})")
+kpicol2.metric("Total Orders", f"{total_orders:,}", delta=delta_orders_val if delta_orders_color != "off" else None, delta_color=delta_orders_color, help=f"vs Previous Period ({prev_orders_help})")
+kpicol3.metric("Return Rate", current_rate_str, delta=delta_return_rate_val if delta_return_rate_color != "off" else None, delta_color=delta_return_rate_color, help=f"{delta_return_rate_val if delta_return_rate_color == 'off' and delta_return_rate_val not in ['N/A', 'N/A Prev.'] else ''} vs Previous Period ({prev_rate_help})")
+
+with st.expander("ⓘ KPI DESIGN Justifications"): st.caption(""" *   **Visual Hierarchy & Chunking:** KPIs prominent, grouped. *   **Comparative Analysis / Contextual Reference Points:** Change vs previous period shown with robust color logic. *   **Anchoring Bias Mitigation:** Comparison reduces reliance on current numbers. *   **Confirmation Bias / Survivorship Bias Mitigation:** Explicit *Return Rate* shown. *   **Cognitive Offloading:** Changes calculated, handling edge cases. """)
 st.markdown("---")
 
 # --- AI Analysis Section ---
