@@ -22,7 +22,7 @@ if 'ai_response' not in st.session_state:
 # --- Data Generation Function ---
 @st.cache_data
 def generate_spanish_data_v3(num_rows=2000):
-    """Generates synthetic e-commerce sales data focused on ALL Spain regions (2024-2025)."""
+    """Generates synthetic e-commerce sales data focused on ALL Spain regions (from 2024-2025)."""
     np.random.seed(42)
     start_date = datetime(2024, 1, 1); end_date = datetime(2025, 12, 31)
     date_range_delta = (end_date - start_date).days
