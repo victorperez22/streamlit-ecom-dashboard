@@ -1,1 +1,6 @@
-
+streamlit
+pandas
+numpy
+plotly
+openai
+python-dateutil
