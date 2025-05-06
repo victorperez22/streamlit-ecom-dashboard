@@ -1,4 +1,4 @@
-# EcomAI Plus: AI-Enhanced Sales Dashboard (v4.0)
+# EcomAI Plus: AI-Enhanced Sales Dashboard
 
 ## Overview
 
