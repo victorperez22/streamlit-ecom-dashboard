@@ -8,18 +8,18 @@ from dateutil.relativedelta import relativedelta
 from openai import OpenAI
 import os
 
-# --- Page Configuration ---
+# Page Configuration
 st.set_page_config(
     layout="wide",
     page_title="EcomAI Plus Dashboard",
     page_icon="✅"
 )
 
-# --- Initialize Session State ---
+# Initialize Session State
 if 'ai_response' not in st.session_state:
     st.session_state.ai_response = None
 
-# --- Data Generation Function ---
+#Data Generation Function 
 @st.cache_data
 def generate_spanish_data_v3(num_rows=2000):
     """Generates synthetic e-commerce sales data focused on ALL Spain regions (from 2024-2025)."""
@@ -54,21 +54,21 @@ def generate_spanish_data_v3(num_rows=2000):
     df['NetSalesAmount'] = df.apply(lambda row: 0 if row['Returned'] else row['SalesAmount'], axis=1)
     return df
 
-# --- Load Data ---
+# Load Data 
 df_original = generate_spanish_data_v3()
 
-# --- Color Palette Definition ---
+# Color Palette Definition
 category_color_map = {cat: px.colors.qualitative.Plotly[i % len(px.colors.qualitative.Plotly)] for i, cat in enumerate(sorted(df_original['Category'].unique()))}
 region_color_map = {reg: px.colors.qualitative.Vivid[i % len(px.colors.qualitative.Vivid)] for i, reg in enumerate(sorted(df_original['Region'].unique()))}
 all_categories = sorted(df_original['Category'].unique())
 all_regions_spain = sorted(df_original['Region'].unique())
 
-# --- Dashboard Title & Description ---
+# Dashboard Title & Description
 st.title("✅ EcomAI Plus: AI-Enhanced Sales Dashboard")
 st.markdown(""" Welcome to EcomAI Plus! Analyze Spanish e-commerce performance across all 17 Autonomous Communities. Leveraging cognitive principles and AI for insights. Generate an **AI summary** or **download an executive report** below. """)
 st.markdown("---")
 
-# --- Sidebar Filters ---
+# Sidebar Filters
 st.sidebar.header("📊 Filters")
 min_date_data = df_original['OrderDate'].min().date(); max_date_data = df_original['OrderDate'].max().date()
 default_start = min_date_data; default_end = max_date_data
@@ -78,7 +78,7 @@ else: st.sidebar.warning("Please select both start and end dates."); start_date_
 selected_regions_global = st.sidebar.multiselect("Select Region(s) (Global Filter)", all_regions_spain, default=all_regions_spain)
 selected_categories_global = st.sidebar.multiselect("Select Category(s) (Global Filter)", all_categories, default=all_categories)
 
-# --- Filter Dataframe (Global Filters) ---
+# Filter Dataframe (Global Filters)
 try: start_datetime = pd.to_datetime(start_date_filter); end_datetime = pd.to_datetime(end_date_filter)
 except ValueError: st.error("Invalid date selected."); st.stop()
 df_filtered = df_original[(df_original['OrderDate'] >= start_datetime) & (df_original['OrderDate'] <= end_datetime) & (df_original['Region'].isin(selected_regions_global)) & (df_original['Category'].isin(selected_categories_global))].copy()
@@ -86,18 +86,18 @@ if df_filtered.empty: st.warning("No data available for selected filters."); st.
 st.sidebar.metric("Filtered Orders (Global)", f"{df_filtered.shape[0]:,}")
 st.sidebar.caption(f"Data from {start_date_filter} to {end_date_filter}.")
 
-# --- Previous Period Calculation ---
+# Previous Period Calculation
 duration = end_datetime - start_datetime;
 if duration.days < 0: duration = timedelta(days=0)
 prev_end_datetime = start_datetime - timedelta(days=1); prev_start_datetime = prev_end_datetime - duration
 df_previous = df_original[(df_original['OrderDate'] >= prev_start_datetime) & (df_original['OrderDate'] <= prev_end_datetime) & (df_original['Region'].isin(selected_regions_global)) & (df_original['Category'].isin(selected_categories_global))].copy()
 
-# --- Sidebar Justification ---
+# Sidebar Justification
 with st.sidebar.expander("ⓘ Sidebar Design Justifications"): st.caption(""" *   **Cognitive Load / Spatial Memory:** Filters consistently located. *   **Recency/Availability Bias Mitigation:** Max date range default. *   **Decision Hierarchy (Awareness):** Filters allow drilling down. *   **User Control:** Enables segment focus. Handles date range selection. """)
 
-# --- Main Dashboard Area ---
+# Main Dashboard Area
 
-# == Level 1: Overview KPIs ==
+# Level 1: Overview KPIs
 st.header("📌 Key Performance Indicators (KPIs)")
 kpicol1, kpicol2, kpicol3 = st.columns(3)
 # KPI Calculation
@@ -186,7 +186,7 @@ kpicol3.metric("Return Rate", current_rate_str, delta=delta_return_rate_val if d
 with st.expander("ⓘ KPI DESIGN Justifications"): st.caption(""" *   **Visual Hierarchy & Chunking:** KPIs prominent, grouped. *   **Comparative Analysis / Contextual Reference Points:** Change vs previous period shown with robust color logic. *   **Anchoring Bias Mitigation:** Comparison reduces reliance on current numbers. *   **Confirmation Bias / Survivorship Bias Mitigation:** Explicit *Return Rate* shown. *   **Cognitive Offloading:** Changes calculated, handling edge cases. """)
 st.markdown("---")
 
-# --- AI Analysis Section ---
+# AI Analysis Section
 st.subheader("🤖 AI Performance Analysis")
 
 def format_data_for_ai(df_current, df_prev, kpi_data, context_filters):
@@ -395,7 +395,7 @@ with tab_sales_qty:
 with st.expander("ⓘ Detailed Analysis Design Justifications"): st.caption(""" *   **Progressive Disclosure / Cognitive Load:** Tabs separate detailed views. Regional trend view uses selection. *   **Comparative Analysis / Pattern Recognition:** Selectable line chart for regional trends. Heatmap for matrix overview. Bar charts for category totals. Box plot visualizes sales distribution per quantity. *   **Chart Appropriateness:** Box plot chosen for visualizing distribution against a discrete variable (Quantity). *   **Preattentive Processing:** Color distinguishes elements consistently. *   **Survivorship/Confirmation Bias Mitigation:** Return Rate by Category chart shown. """)
 st.markdown("---")
 
-# --- Download Executive Summary Section ---
+# Download Executive Summary Section
 # (Code remains the same)
 st.header("📋 Executive Summary Download")
 def generate_markdown_summary(kpi_data, context_filters, ai_summary):
@@ -411,7 +411,7 @@ st.caption("Downloads a Markdown file summarizing the KPIs and AI analysis based
 with st.expander("ⓘ Download Justifications"): st.caption(""" *   **Cognitive Offloading:** Provides a shareable summary. *   **Accessibility:** Offers key insights in simple text format. *   **Session State:** Includes latest AI analysis. Positioned after detailed analysis for logical flow. """)
 st.markdown("---")
 
-# == Level 4: Raw Data Exploration ==
+# Level 4: Raw Data Exploration
 st.header("💾 Raw Data Explorer")
 with st.expander("View Filtered Raw Data (2024-2025)"):
     st.dataframe(df_filtered.style.format({'SalesAmount': '€{:,.2f}', 'SalesTarget': '€{:,.2f}', 'NetSalesAmount': '€{:,.2f}'}), use_container_width=True)
@@ -421,7 +421,7 @@ with st.expander("View Filtered Raw Data (2024-2025)"):
     st.download_button(label="Download Filtered Data as CSV", data=csv, file_name=f'filtered_sales_data_spain_2024_2025_{start_date_filter}_to_{end_date_filter}.csv', mime='text/csv')
     st.caption("Allows users to perform their own analysis or verify calculations.")
 
-# --- Final Footer ---
+# Final Footer
 st.markdown("---")
 st.caption("EcomAI Plus Enhanced Dashboard | Data Visualization and Decision-Making Subject | © 2025")
 
